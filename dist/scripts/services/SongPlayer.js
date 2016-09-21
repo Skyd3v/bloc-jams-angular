@@ -1,5 +1,5 @@
 (function() {
-	function SongPlayer(Fixtures) {
+	function SongPlayer($rootScope, Fixtures) {
 		var SongPlayer = {};
 		
 		
@@ -17,8 +17,8 @@
  */
 		
 		var currentBuzzObject = null;
-        
-       /**
+		
+		/**
 	* @function stopSong
 	* @desc Stops the current song and sets playing = null
 	* @param {Object} song
@@ -27,8 +27,7 @@
 		var stopSong = function(song) {
 			currentBuzzObject.stop();
 			SongPlayer.currentSong.playing = null;
-		} 
-        
+		}
 		
 	/**
  	* @function setSong
@@ -45,13 +44,19 @@
 				formats: ['mp3'],
 				preload: true
 			});
+			
+			currentBuzzObject.bind('timeupdate', function() {
+         $rootScope.$apply(function() {
+             SongPlayer.currentTime = currentBuzzObject.getTime();
+         });
+      });
 				
 				SongPlayer.currentSong = song;
 		};
 		
 	/**
 	* @function playSong
-	* @desc Plays the currently selected song
+	* @desc Plays the currently selected song and sets playing = true
 	* @param {Object} song
 	*/
 		
@@ -59,6 +64,7 @@
 			currentBuzzObject.play();
 			song.playing = true;
 		};
+		
 		
 	/**
 	* @function getSongIndex
@@ -76,18 +82,25 @@
  	*/
 		SongPlayer.currentSong = null;
 		
+	/**
+	* @desc Current playback time (in seconds) of currently playing song
+	* @type {Number}
+	*/
+		SongPlayer.currentTime = null;
+		
+		
 		
 		SongPlayer.play = function(song) {
 			song = song || SongPlayer.currentSong;
 			if (SongPlayer.currentSong !== song) {
 				setSong(song);
 				playSong(song);
-			} else if (SongPlayer.currentSong === song) {
+			} else if (SongPlayer.currentSong !== null && SongPlayer.currentSong === song) {
 						if (currentBuzzObject.isPaused()) {
 								currentBuzzObject.play();
 								song.playing = true;
 						}
-                } else {
+				}  else {
 					song = currentAlbum.songs[0];
 					setSong(song);
 					playSong(song);
@@ -106,11 +119,14 @@
 	* @type {Object} 
 	*/
 		
-		
+		/*
+		repetition of playSong / setSong
+		order of steps > serialization
+		*/
 		
 	/**
 	* @function SongPlayer.previous
-	* @desc Decreaces the current song index by one, and plays the previous song. Unless the index is already zero, then the 				 player will remain on the first song
+	* @desc Decreaces the current song index by one, and plays the previous song. Unless the index is already zero, then the 				 player will stop playing. 
 	*/
 		
 		SongPlayer.previous = function() {
@@ -118,12 +134,13 @@
 			currentSongIndex--;
 			
 			if (currentSongIndex < 0) {
-				stopSong(song);
-			} else {
-				var song = currentAlbum.songs[currentSongIndex];
-				setSong(song);
-				playSong(song);
+				currentSongIndex = currentAlbum.songs.length - 1;
 			}
+			
+			var song = currentAlbum.songs[currentSongIndex];
+			
+			setSong(song);
+			playSong(song);
 		};
 		
 	/**
@@ -135,13 +152,25 @@
 			var currentSongIndex = getSongIndex(SongPlayer.currentSong);
 			currentSongIndex++;
 			
-			if (currentSongIndex > currentAlbum.songs.length) {
-				stopSong(song);
-			} else {
-				var song = currentAlbum.songs[currentSongIndex];
-				setSong(song);
-				playSong(song);
-			}
+			if (currentSongIndex > currentAlbum.songs.length - 1) {
+				currentSongIndex = 0;
+			} 
+			
+			var song = currentAlbum.songs[currentSongIndex];
+			
+			setSong(song);
+			playSong(song);
+		};
+		
+	/**
+  * @function setCurrentTime
+  * @desc Set current time (in seconds) of currently playing song
+  * @param {Number} time
+  */
+		SongPlayer.setCurrentTime = function(time) {
+   		if (currentBuzzObject) {
+       	currentBuzzObject.setTime(time);
+   		}
 		};
 		
 		return SongPlayer;
@@ -149,5 +178,5 @@
 	
 	angular
 		.module('blocJams')
-		.service('SongPlayer', ['Fixtures', SongPlayer]);
+		.service('SongPlayer', ['$rootScope', 'Fixtures', SongPlayer]);
 })();
