@@ -29,7 +29,18 @@
 			SongPlayer.currentSong.playing = null;
 		}
 		
-	/**
+        /**
+  * @desc Player volume
+  * @type {Number}
+  */
+     SongPlayer.volume = 0;
+     SongPlayer.maxVolume = 100;
+	
+        
+        
+        
+        
+        /**
  	* @function setSong
  	* @desc Stops currently playing song and loads new audio file as currentBuzzObject
  	* @param {Object} song
@@ -62,6 +73,7 @@
 		
 		var playSong = function(song) {
 			currentBuzzObject.play();
+            SongPlayer.volume = 40;
 			song.playing = true;
 		};
 		
@@ -172,6 +184,12 @@
        	currentBuzzObject.setTime(time);
    		}
 		};
+        
+        SongPlayer.setVolume = function(volume) {
+      if (currentBuzzObject) {
+          currentBuzzObject.setVolume(volume);
+      }
+        };
 		
 		return SongPlayer;
 	};
